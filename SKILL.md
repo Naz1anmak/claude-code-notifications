@@ -114,7 +114,7 @@ Bundle IDs / class names that count as "terminal" (extend this list as needed):
 
 ### Step 8 — Install wrapper script
 
-Copy the platform-specific script from `scripts/` to `~/.claude/bin/notify.<sh|ps1>`. `chmod +x` on POSIX. The script ships with the focus-guard list already populated; the wizard substitutes the user's choices (sounds, icon path, phrasebook) at install time.
+Create `~/.claude/bin/` if it doesn't exist (`mkdir -p ~/.claude/bin`), then copy the platform-specific script from `scripts/` to `~/.claude/bin/notify.<sh|ps1>`. `chmod +x` on POSIX. The script ships with the focus-guard list already populated; the wizard substitutes the user's choices (sounds, icon path, phrasebook) at install time.
 
 See `scripts/notify-macos.sh`, `scripts/notify-linux.sh`, `scripts/notify-windows.ps1` for the canonical implementations — they're already correct, don't rewrite them inline.
 
@@ -139,11 +139,26 @@ Validate with `jq -e '.hooks | keys' ~/.claude/settings.json` after writing.
 
 ### Step 10 — Test
 
-Pipe-test each hook command standalone:
+Pipe-test each hook command standalone. Cover **both** PermissionRequest branches and the Stop hook:
 
 ```bash
-echo '{"tool_name":"Bash"}' | bash -c '<the hook command body>'
-echo '{"tool_name":"AskUserQuestion"}' | bash -c '<the hook command body>'
+# PermissionRequest — generic tool branch (Hero sound, "Permission needed" subtitle)
+echo '{"tool_name":"Bash"}' | bash -c '<PermissionRequest command body>'
+
+# PermissionRequest — interactive question branch (Submarine sound, "Your input needed")
+echo '{"tool_name":"AskUserQuestion"}' | bash -c '<PermissionRequest command body>'
+
+# Stop — no stdin needed, just run the command directly
+bash -c '<Stop command body>'
+```
+
+Tip: since the focus guard suppresses the toast when a terminal is in front, ask the user to switch to a different app (browser, etc.) before you run the tests — otherwise they'll see "exit=0" but no plashka and think it's broken. Alternatively, run a one-off copy of the wrapper with the guard removed to confirm the rest of the pipeline works:
+
+```bash
+sed '/# --- focus guard ---/,/esac/d' ~/.claude/bin/notify.sh > /tmp/notify-noguard.sh
+chmod +x /tmp/notify-noguard.sh
+/tmp/notify-noguard.sh -title "Claude Code" -message "Pipeline check" -sound Hero
+rm /tmp/notify-noguard.sh
 ```
 
 Confirm with the user that the toasts arrived. If not, walk the troubleshooting table.
