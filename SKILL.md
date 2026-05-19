@@ -1,13 +1,15 @@
 ---
 name: claude-code-notifications
-description: Use when the user wants desktop notifications for Claude Code — alerts when a turn finishes, when a tool needs permission, or when an interactive question (AskUserQuestion/ExitPlanMode) is waiting. Covers macOS, Linux, and Windows. Triggers on phrases like "notify me when claude finishes", "desktop notification for permission prompts", "set up sounds for claude code", "I miss claude's responses when in another window".
+description: Use when the user wants desktop notifications for the Claude Code CLI (terminal) — alerts when a turn finishes, when a tool needs permission, or when an interactive question (AskUserQuestion/ExitPlanMode) is waiting. Covers macOS, Linux, and Windows. Not for the Claude Code desktop app (which has its own in-app notifications). Triggers on phrases like "notify me when claude finishes", "desktop notification for permission prompts", "set up sounds for claude code", "I miss claude's responses when in another window".
 ---
 
-# Claude Code Notifications
+# Claude Code CLI Notifications
 
 ## Overview
 
-A guided wizard that installs OS-native desktop notifications for Claude Code by wiring three hooks in `settings.json`:
+A guided wizard that installs OS-native desktop notifications for the **Claude Code CLI** (the terminal tool) by wiring three hooks in `settings.json`. Note: the Claude Code desktop app has its own in-app notifications — this skill targets only the CLI, where hooks live.
+
+Three hooks:
 
 - `Stop` — fires when Claude finishes its turn
 - `PermissionRequest` — fires when a tool (Bash/Edit/Write/AskUserQuestion/ExitPlanMode/…) waits for approval

@@ -5,15 +5,17 @@
 
 </div>
 
-# Claude Code Notifications
+# Claude Code CLI — Desktop Notifications
 
-A guided skill that adds native desktop notifications to [Claude Code](https://docs.claude.com/en/docs/claude-code) on **macOS**, **Linux**, and **Windows** — alerts when Claude finishes a turn, when a tool needs permission, or when an interactive question is waiting.
+A guided skill that adds native OS desktop notifications to the [Claude Code **CLI**](https://docs.claude.com/en/docs/claude-code) on **macOS**, **Linux**, and **Windows** — alerts when Claude finishes a turn, when a tool needs permission, or when an interactive question is waiting.
+
+> The Claude Code desktop app has its own in-app notifications. This skill is for the **terminal CLI**, which by default doesn't surface anything to the OS.
 
 Built around the `Stop` / `PermissionRequest` hooks in `~/.claude/settings.json`. Each hook calls a small wrapper script that **suppresses the toast when a terminal emulator is in the foreground** — same behaviour as Slack or VS Code: apps in focus don't ping themselves.
 
 ## Why this exists
 
-Out of the box Claude Code is silent — if you ALT-TAB to a browser while it's working, you'll miss the moment it finishes, or the moment it asks for permission to run a command. This skill wires up:
+Out of the box the CLI is silent — if you ALT-TAB to a browser while it's working, you'll miss the moment it finishes, or the moment it asks for permission to run a command. This skill wires up:
 
 - 🔔 **Stop** — "response ready" toast the moment Claude finishes its turn
 - 🚦 **PermissionRequest** — separate toasts (and optionally separate sounds) for tool approvals (`Bash`/`Edit`/`Write`/...) versus interactive choice prompts (`AskUserQuestion`/`ExitPlanMode`)
