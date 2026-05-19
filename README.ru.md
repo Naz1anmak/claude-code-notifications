@@ -24,7 +24,7 @@
 ## Установка
 
 ```bash
-git clone https://github.com/<your-username>/claude-code-notifications.git ~/.claude/skills/claude-code-notifications
+git clone https://github.com/Naz1anmak/claude-code-notifications.git ~/.claude/skills/claude-code-notifications
 ```
 
 В любой сессии Claude Code:
@@ -32,6 +32,10 @@ git clone https://github.com/<your-username>/claude-code-notifications.git ~/.cl
 ```
 /skill claude-code-notifications
 ```
+
+### Первый запуск на macOS
+
+При самом первом срабатывании `terminal-notifier` macOS один раз спросит, разрешать ли ему слать уведомления. **Нажми «Разрешить»** — иначе все последующие плашки будут молча проглатываться, и непонятно почему ничего не приходит. Проверить/поменять это потом можно в **Системных настройках → Уведомления → terminal-notifier** (нужно чтобы были включены *Разрешить уведомления* и *Воспроизводить звук*).
 
 Claude проведёт по шагам:
 

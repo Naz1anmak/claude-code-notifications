@@ -24,7 +24,7 @@ Out of the box Claude Code is silent — if you ALT-TAB to a browser while it's 
 ## Install
 
 ```bash
-git clone https://github.com/<your-username>/claude-code-notifications.git ~/.claude/skills/claude-code-notifications
+git clone https://github.com/Naz1anmak/claude-code-notifications.git ~/.claude/skills/claude-code-notifications
 ```
 
 Then in any Claude Code session, run:
@@ -32,6 +32,10 @@ Then in any Claude Code session, run:
 ```
 /skill claude-code-notifications
 ```
+
+### macOS first-run permission
+
+The first time `terminal-notifier` fires, macOS will show a one-time prompt asking whether to allow notifications from it. **Click Allow** — otherwise every subsequent toast is silently dropped and nothing shows up. You can verify/change this later under **System Settings → Notifications → terminal-notifier** (make sure *Allow Notifications* and *Play sound* are both on).
 
 Claude will walk you through:
 
