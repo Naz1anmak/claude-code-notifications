@@ -38,34 +38,48 @@ while [ $# -gt 0 ]; do
 done
 
 # --- focus guard --------------------------------------------------------------
+# Suppress only if the host that runs Claude is itself frontmost. $TERM_PROGRAM
+# is set by every terminal emulator (vscode, gnome-terminal, ...). When known,
+# we compare it to the active window. When unset, fall back to a generic list.
+
 FRONT=""
 
 if [ -n "${WAYLAND_DISPLAY-}" ]; then
-    # Wayland: best-effort, depends on compositor
     if command -v hyprctl >/dev/null 2>&1; then
         FRONT=$(hyprctl activewindow -j 2>/dev/null | grep -oE '"class":"[^"]*"' | head -1 | cut -d'"' -f4)
     elif command -v swaymsg >/dev/null 2>&1; then
         FRONT=$(swaymsg -t get_tree 2>/dev/null | grep -oE '"app_id":"[^"]*"[^}]*"focused":true' | head -1 | cut -d'"' -f4)
     fi
 elif [ -n "${DISPLAY-}" ]; then
-    # X11
     if command -v xdotool >/dev/null 2>&1; then
         FRONT=$(xdotool getactivewindow getwindowclassname 2>/dev/null)
     fi
 fi
 
-case "$FRONT" in
-    *[Tt]erminal* \
-    | *[Aa]lacritty* \
-    | *[Kk]itty* \
-    | *[Ww]ezTerm* \
-    | *[Gg]nome-terminal* \
-    | *[Kk]onsole* \
-    | *[Xx]term* \
-    | *[Gg]hostty* \
-    | *[Ww]arp*)
-        exit 0
-        ;;
+case "${TERM_PROGRAM:-}" in
+    vscode)
+        # VS Code forks: Code, code-oss, VSCodium, Cursor, Windsurf...
+        case "$FRONT" in
+            *[Cc]ode*|*VSCodium*|*Cursor*|*Windsurf*)
+                exit 0 ;;
+        esac ;;
+    ghostty)
+        case "$FRONT" in *[Gg]hostty*) exit 0 ;; esac ;;
+    WarpTerminal)
+        case "$FRONT" in *[Ww]arp*) exit 0 ;; esac ;;
+    "")
+        case "$FRONT" in
+            *[Tt]erminal* \
+            | *[Aa]lacritty* \
+            | *[Kk]itty* \
+            | *[Ww]ezTerm* \
+            | *[Gg]nome-terminal* \
+            | *[Kk]onsole* \
+            | *[Xx]term* \
+            | *[Gg]hostty* \
+            | *[Ww]arp*)
+                exit 0 ;;
+        esac ;;
 esac
 
 # --- notify -------------------------------------------------------------------

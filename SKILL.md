@@ -103,14 +103,27 @@ Save final icon path. On Linux/Windows: `-contentImage` equivalent is `notify-se
 
 AskUserQuestion: "Suppress notifications when a terminal is focused?" → recommend yes (matches IDE/Slack behavior — apps in focus don't ping themselves).
 
-If yes, the wrapper script checks the frontmost app via:
+**Important:** a naive "is any terminal in focus?" check fails for VS Code's integrated terminal (and Cursor, Codium, Windsurf — all VS Code forks). VS Code itself isn't on a "terminals" list, so plashka prilietała even when the user was looking right at the Claude session.
+
+The fix: use `$TERM_PROGRAM`, which every emulator sets in its integrated terminal env. It identifies **which GUI app actually hosts Claude**, so we can suppress only when *that* app is frontmost — not every terminal in the universe.
+
+| `TERM_PROGRAM` | Host app to match |
+|---|---|
+| `Apple_Terminal` | `com.apple.Terminal` |
+| `iTerm.app` | `com.googlecode.iterm2` |
+| `ghostty` | `com.mitchellh.ghostty` |
+| `WarpTerminal` | `dev.warp.Warp-Stable` |
+| `Hyper` | `co.zeit.hyper` |
+| `vscode` | bundle-ID substring match against `VSCode` / `vscode` / `code-oss` / `VSCodium` / `Cursor` / `Windsurf` / `todesktop` |
+| *(empty)* | fall back to generic-terminal list |
+
+Detection of the frontmost app (same as before):
 - **macOS**: `osascript -e 'tell application "System Events" to bundle identifier of first process whose frontmost is true'`
 - **Linux/X11**: `xdotool getactivewindow getwindowclassname`
-- **Linux/Wayland**: best-effort via `hyprctl activewindow` (Hyprland) / `swaymsg -t get_tree` (Sway). Otherwise no-op.
-- **Windows**: `(Get-Process | Where-Object {$_.MainWindowHandle -eq [Win32]::GetForegroundWindow()}).ProcessName` — match against `WindowsTerminal`, `pwsh`, `cmd`, `alacritty`, `kitty`, `WezTerm`.
+- **Linux/Wayland**: best-effort via `hyprctl activewindow` (Hyprland) / `swaymsg -t get_tree` (Sway). Otherwise no-op (notify always).
+- **Windows**: P/Invoke `GetForegroundWindow` → `Get-Process` → `.ProcessName`.
 
-Bundle IDs / class names that count as "terminal" (extend this list as needed):
-`com.apple.Terminal`, `com.googlecode.iterm2`, `com.mitchellh.ghostty`, `dev.warp.Warp-Stable`, `io.alacritty`, `org.alacritty`, `net.kovidgoyal.kitty`, `com.github.wez.wezterm`, `co.zeit.hyper`, `org.tabby`, `org.gnome.Terminal`, `org.gnome.Console`, `org.kde.konsole`, `Alacritty`, `kitty`, `WezTerm`, `WindowsTerminal`.
+The reference scripts in `scripts/` already implement this logic — copy them, don't reinvent.
 
 ### Step 8 — Install wrapper script
 

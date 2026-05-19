@@ -35,12 +35,20 @@ $pid_out = 0
 [Win32.User32]::GetWindowThreadProcessId($hwnd, [ref]$pid_out) | Out-Null
 $frontProcess = (Get-Process -Id $pid_out -ErrorAction SilentlyContinue).ProcessName
 
-$terminals = @("WindowsTerminal", "pwsh", "powershell", "cmd", "conhost",
-               "alacritty", "kitty", "wezterm-gui", "wezterm", "Hyper",
-               "Tabby", "wt", "mintty")
-
-if ($terminals -contains $frontProcess) {
-    exit 0
+# Suppress only if the host that runs Claude is itself frontmost.
+# $env:TERM_PROGRAM is set by every modern emulator (vscode, etc.).
+# Falls back to a generic terminal list when unset.
+switch ($env:TERM_PROGRAM) {
+    'vscode' {
+        # VS Code forks: Code, Code - Insiders, VSCodium, Cursor, Windsurf...
+        if ($frontProcess -match '^(Code|Code - Insiders|VSCodium|Cursor|Windsurf)$') { exit 0 }
+    }
+    default {
+        $terminals = @("WindowsTerminal", "pwsh", "powershell", "cmd", "conhost",
+                       "alacritty", "kitty", "wezterm-gui", "wezterm", "Hyper",
+                       "Tabby", "wt", "mintty")
+        if ($terminals -contains $frontProcess) { exit 0 }
+    }
 }
 
 # --- toast --------------------------------------------------------------------
