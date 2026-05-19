@@ -36,13 +36,18 @@ $pid_out = 0
 $frontProcess = (Get-Process -Id $pid_out -ErrorAction SilentlyContinue).ProcessName
 
 # Suppress only if the host that runs Claude is itself frontmost.
-# $env:TERM_PROGRAM is set by every modern emulator (vscode, etc.).
-# Falls back to a generic terminal list when unset.
+#
+# 1. VS Code env vars catch both the integrated terminal AND extension
+#    subprocesses (e.g. the Claude Code VS Code plugin), where TERM_PROGRAM
+#    isn't set.
+# 2. $env:TERM_PROGRAM covers standalone emulators.
+# Falls back to a generic terminal list when neither is present.
+
+if ($env:VSCODE_PID -or $env:VSCODE_IPC_HOOK) {
+    if ($frontProcess -match '^(Code|Code - Insiders|VSCodium|Cursor|Windsurf)$') { exit 0 }
+}
+
 switch ($env:TERM_PROGRAM) {
-    'vscode' {
-        # VS Code forks: Code, Code - Insiders, VSCodium, Cursor, Windsurf...
-        if ($frontProcess -match '^(Code|Code - Insiders|VSCodium|Cursor|Windsurf)$') { exit 0 }
-    }
     default {
         $terminals = @("WindowsTerminal", "pwsh", "powershell", "cmd", "conhost",
                        "alacritty", "kitty", "wezterm-gui", "wezterm", "Hyper",

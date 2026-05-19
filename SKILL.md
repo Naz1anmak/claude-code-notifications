@@ -103,19 +103,24 @@ Save final icon path. On Linux/Windows: `-contentImage` equivalent is `notify-se
 
 AskUserQuestion: "Suppress notifications when a terminal is focused?" → recommend yes (matches IDE/Slack behavior — apps in focus don't ping themselves).
 
-**Important:** a naive "is any terminal in focus?" check fails for VS Code's integrated terminal (and Cursor, Codium, Windsurf — all VS Code forks). VS Code itself isn't on a "terminals" list, so plashka prilietała even when the user was looking right at the Claude session.
+**Important:** a naive "is any terminal in focus?" check fails for VS Code (and Cursor, Codium, Windsurf). VS Code itself isn't a "terminal" bundle ID, so the plashka used to fire even when the user was looking right at the Claude session.
 
-The fix: use `$TERM_PROGRAM`, which every emulator sets in its integrated terminal env. It identifies **which GUI app actually hosts Claude**, so we can suppress only when *that* app is frontmost — not every terminal in the universe.
+Worse: the **VS Code extension** for Claude doesn't run inside the integrated terminal — it runs as a subprocess of the extension host, where `$TERM_PROGRAM` is **not** set. So `$TERM_PROGRAM=vscode` checks only catch the integrated-terminal case, not the plugin.
 
-| `TERM_PROGRAM` | Host app to match |
+The robust fix uses two signals, in priority order:
+
+1. **VS Code env vars** — `$VSCODE_PID` and `$VSCODE_IPC_HOOK` are injected by the extension host into *both* the integrated terminal *and* extension subprocesses. If either is non-empty, we're inside VS Code (or a fork). Compare against frontmost via bundle-ID substring match (`*VSCode*`, `*Cursor*`, `*Windsurf*`, ...).
+2. **`$TERM_PROGRAM`** — covers everything else (standalone emulators).
+
+| Signal | Host app to match |
 |---|---|
-| `Apple_Terminal` | `com.apple.Terminal` |
-| `iTerm.app` | `com.googlecode.iterm2` |
-| `ghostty` | `com.mitchellh.ghostty` |
-| `WarpTerminal` | `dev.warp.Warp-Stable` |
-| `Hyper` | `co.zeit.hyper` |
-| `vscode` | bundle-ID substring match against `VSCode` / `vscode` / `code-oss` / `VSCodium` / `Cursor` / `Windsurf` / `todesktop` |
-| *(empty)* | fall back to generic-terminal list |
+| `$VSCODE_PID` or `$VSCODE_IPC_HOOK` set | bundle-ID substring match against `VSCode` / `vscode` / `code-oss` / `VSCodium` / `Cursor` / `Windsurf` / `todesktop` |
+| `TERM_PROGRAM=Apple_Terminal` | `com.apple.Terminal` |
+| `TERM_PROGRAM=iTerm.app` | `com.googlecode.iterm2` |
+| `TERM_PROGRAM=ghostty` | `com.mitchellh.ghostty` |
+| `TERM_PROGRAM=WarpTerminal` | `dev.warp.Warp-Stable` |
+| `TERM_PROGRAM=Hyper` | `co.zeit.hyper` |
+| *(none of the above)* | fall back to generic-terminal list |
 
 Detection of the frontmost app (same as before):
 - **macOS**: `osascript -e 'tell application "System Events" to bundle identifier of first process whose frontmost is true'`

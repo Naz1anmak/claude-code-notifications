@@ -56,13 +56,16 @@ elif [ -n "${DISPLAY-}" ]; then
     fi
 fi
 
+# VS Code family: env vars are set for both integrated terminal AND extension
+# subprocesses. TERM_PROGRAM may be missing in the extension-subprocess case.
+if [ -n "${VSCODE_PID:-}" ] || [ -n "${VSCODE_IPC_HOOK:-}" ]; then
+    case "$FRONT" in
+        *[Cc]ode*|*VSCodium*|*Cursor*|*Windsurf*)
+            exit 0 ;;
+    esac
+fi
+
 case "${TERM_PROGRAM:-}" in
-    vscode)
-        # VS Code forks: Code, code-oss, VSCodium, Cursor, Windsurf...
-        case "$FRONT" in
-            *[Cc]ode*|*VSCodium*|*Cursor*|*Windsurf*)
-                exit 0 ;;
-        esac ;;
     ghostty)
         case "$FRONT" in *[Gg]hostty*) exit 0 ;; esac ;;
     WarpTerminal)

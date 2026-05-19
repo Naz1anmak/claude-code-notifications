@@ -10,13 +10,29 @@
 set -u
 
 # --- focus guard --------------------------------------------------------------
-# Suppress only if the host that runs Claude is itself frontmost. $TERM_PROGRAM
-# is set by every terminal emulator (Apple_Terminal, iTerm.app, vscode, ...) —
-# we use it to know which GUI app actually contains the Claude session.
-# Falls back to the old "any known terminal" list when TERM_PROGRAM is unset.
+# Suppress only if the host that runs Claude is itself frontmost.
+#
+# Two detection signals, in order of reliability:
+#   1. VS Code env vars ($VSCODE_PID / $VSCODE_IPC_HOOK) — set by the VS Code
+#      extension host for BOTH the integrated terminal AND extension
+#      subprocesses (e.g. the Claude Code VS Code plugin). $TERM_PROGRAM is
+#      NOT set in the extension-subprocess case, so this is the only way to
+#      catch it. Same vars work for VS Code forks (Cursor, Codium, ...).
+#   2. $TERM_PROGRAM — set by every standalone emulator (Apple_Terminal,
+#      iTerm.app, ghostty, ...).
+# Falls back to a generic-terminal list if neither signal is present.
 
 FRONT=$(osascript -e 'tell application "System Events" to bundle identifier of first process whose frontmost is true' 2>/dev/null)
 
+# 1. VS Code family (integrated terminal OR extension subprocess)
+if [ -n "${VSCODE_PID:-}" ] || [ -n "${VSCODE_IPC_HOOK:-}" ]; then
+    case "$FRONT" in
+        *VSCode*|*vscode*|*code-oss*|*VSCodium*|*todesktop*|*Cursor*|*Windsurf*)
+            exit 0 ;;
+    esac
+fi
+
+# 2. Standalone emulator via TERM_PROGRAM
 case "${TERM_PROGRAM:-}" in
     Apple_Terminal)
         [ "$FRONT" = "com.apple.Terminal" ] && exit 0 ;;
@@ -28,13 +44,6 @@ case "${TERM_PROGRAM:-}" in
         [ "$FRONT" = "dev.warp.Warp-Stable" ] && exit 0 ;;
     Hyper)
         [ "$FRONT" = "co.zeit.hyper" ] && exit 0 ;;
-    vscode)
-        # All VS Code forks set TERM_PROGRAM=vscode (Cursor, Codium, Insiders, etc).
-        # Match by bundle-ID substring instead of an exact list.
-        case "$FRONT" in
-            *VSCode*|*vscode*|*code-oss*|*VSCodium*|*todesktop*|*Cursor*|*Windsurf*)
-                exit 0 ;;
-        esac ;;
     "")
         # Unknown host — fall back to historical generic-terminal list.
         case "$FRONT" in
