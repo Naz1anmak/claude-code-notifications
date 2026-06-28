@@ -110,13 +110,13 @@ Worse: the **VS Code extension** for Claude doesn't run inside the integrated te
 The robust fix uses three signals, in priority order:
 
 1. **VS Code env vars** — `$VSCODE_PID` and `$VSCODE_IPC_HOOK` are injected by the extension host into *both* the integrated terminal *and* extension subprocesses. If either is non-empty, we're inside VS Code (or a fork). Compare against frontmost via bundle-ID substring match (`*VSCode*`, `*Cursor*`, `*Windsurf*`, ...).
-2. **`$CLAUDE_CODE_ENTRYPOINT=claude-desktop`** — set when Claude Code runs inside the Claude desktop app's **Code** section (the app spawns the CLI as a subprocess, and `$TERM_PROGRAM` is *not* set there). Without this, the toast fired even while the user was looking right at the in-app session. Match the desktop app as frontmost (`com.anthropic.claudefordesktop` on macOS, `Claude` window-class/process elsewhere).
+2. **`$CLAUDE_CODE_ENTRYPOINT=claude-desktop`** — set when Claude Code runs inside the Claude desktop app's **Code** section (the app spawns the CLI as a subprocess, and `$TERM_PROGRAM` is *not* set there). Here we **suppress unconditionally**: the desktop app owns notifications entirely — it stays silent while focused and fires its own native toast when backgrounded. If our wrapper also emitted, the user would get *two* toasts when away from the app (the app's native one + ours). No frontmost check needed.
 3. **`$TERM_PROGRAM`** — covers everything else (standalone emulators).
 
 | Signal | Host app to match |
 |---|---|
 | `$VSCODE_PID` or `$VSCODE_IPC_HOOK` set | bundle-ID substring match against `VSCode` / `vscode` / `code-oss` / `VSCodium` / `Cursor` / `Windsurf` / `todesktop` |
-| `CLAUDE_CODE_ENTRYPOINT=claude-desktop` | `com.anthropic.claudefordesktop` (macOS) / `Claude` window-class / process |
+| `CLAUDE_CODE_ENTRYPOINT=claude-desktop` | suppress unconditionally — the desktop app sends its own native notifications |
 | `TERM_PROGRAM=Apple_Terminal` | `com.apple.Terminal` |
 | `TERM_PROGRAM=iTerm.app` | `com.googlecode.iterm2` |
 | `TERM_PROGRAM=ghostty` | `com.mitchellh.ghostty` |

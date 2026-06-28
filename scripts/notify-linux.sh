@@ -66,10 +66,11 @@ if [ -n "${VSCODE_PID:-}" ] || [ -n "${VSCODE_IPC_HOOK:-}" ]; then
 fi
 
 # Claude desktop app: the "Code" section runs Claude Code as an app subprocess
-# ($CLAUDE_CODE_ENTRYPOINT=claude-desktop, no $TERM_PROGRAM). Match its Electron
-# window class so the toast is suppressed while the app itself is focused.
+# ($CLAUDE_CODE_ENTRYPOINT=claude-desktop). The app owns notifications entirely
+# (silent while focused, native toast when backgrounded), so our wrapper must
+# never emit there — otherwise the user gets two toasts when away.
 if [ "${CLAUDE_CODE_ENTRYPOINT:-}" = "claude-desktop" ]; then
-    case "$FRONT" in *[Cc]laude*) exit 0 ;; esac
+    exit 0
 fi
 
 case "${TERM_PROGRAM:-}" in

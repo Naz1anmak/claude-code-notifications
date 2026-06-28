@@ -33,12 +33,12 @@ if [ -n "${VSCODE_PID:-}" ] || [ -n "${VSCODE_IPC_HOOK:-}" ]; then
 fi
 
 # 1b. Claude desktop app — the "Code" section runs Claude Code as a subprocess
-#     of the app, which sets $CLAUDE_CODE_ENTRYPOINT=claude-desktop and does NOT
-#     set $TERM_PROGRAM. Without this branch it would fall through to the generic
-#     list below (which has no desktop bundle id) and the toast would fire even
-#     while the user is looking right at the session.
+#     of the app ($CLAUDE_CODE_ENTRYPOINT=claude-desktop). The app owns
+#     notifications entirely: it stays silent while focused and fires its own
+#     native toast when backgrounded. So our wrapper must NEVER emit there —
+#     otherwise the user gets two toasts (ours + the app's) when away.
 if [ "${CLAUDE_CODE_ENTRYPOINT:-}" = "claude-desktop" ]; then
-    [ "$FRONT" = "com.anthropic.claudefordesktop" ] && exit 0
+    exit 0
 fi
 
 # 2. Standalone emulator via TERM_PROGRAM

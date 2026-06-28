@@ -57,12 +57,13 @@ run_case() {
 }
 
 # --- Claude desktop app ("Code" section) -------------------------------------
-# Bug: entrypoint=claude-desktop, no TERM_PROGRAM, desktop app frontmost.
+# The desktop app owns notifications entirely: it stays silent while focused and
+# fires its own native toast when backgrounded. Our wrapper must never emit there
+# (it would duplicate the app's notification) — regardless of what's frontmost.
 run_case "desktop app frontmost -> suppress" suppress \
     CLAUDE_CODE_ENTRYPOINT=claude-desktop FAKE_FRONT=com.anthropic.claudefordesktop
 
-# Desktop session but user switched to another app -> must still notify.
-run_case "desktop session, user switched away -> notify" notify \
+run_case "desktop session, user switched away -> suppress" suppress \
     CLAUDE_CODE_ENTRYPOINT=claude-desktop FAKE_FRONT=com.apple.Safari
 
 # --- Standalone terminal (regression) ----------------------------------------
