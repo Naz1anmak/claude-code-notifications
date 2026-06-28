@@ -32,6 +32,15 @@ if [ -n "${VSCODE_PID:-}" ] || [ -n "${VSCODE_IPC_HOOK:-}" ]; then
     esac
 fi
 
+# 1b. Claude desktop app — the "Code" section runs Claude Code as a subprocess
+#     of the app, which sets $CLAUDE_CODE_ENTRYPOINT=claude-desktop and does NOT
+#     set $TERM_PROGRAM. Without this branch it would fall through to the generic
+#     list below (which has no desktop bundle id) and the toast would fire even
+#     while the user is looking right at the session.
+if [ "${CLAUDE_CODE_ENTRYPOINT:-}" = "claude-desktop" ]; then
+    [ "$FRONT" = "com.anthropic.claudefordesktop" ] && exit 0
+fi
+
 # 2. Standalone emulator via TERM_PROGRAM
 case "${TERM_PROGRAM:-}" in
     Apple_Terminal)
@@ -62,7 +71,10 @@ case "${TERM_PROGRAM:-}" in
 esac
 
 # --- locate terminal-notifier -------------------------------------------------
-if [ -x /opt/homebrew/bin/terminal-notifier ]; then
+# Honor a caller-provided $NOTIFIER (custom installs / tests) before probing.
+if [ -n "${NOTIFIER:-}" ] && [ -x "$NOTIFIER" ]; then
+    exec "$NOTIFIER" "$@"
+elif [ -x /opt/homebrew/bin/terminal-notifier ]; then
     NOTIFIER=/opt/homebrew/bin/terminal-notifier
 elif [ -x /usr/local/bin/terminal-notifier ]; then
     NOTIFIER=/usr/local/bin/terminal-notifier

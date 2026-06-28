@@ -107,14 +107,16 @@ AskUserQuestion: "Suppress notifications when a terminal is focused?" → recomm
 
 Worse: the **VS Code extension** for Claude doesn't run inside the integrated terminal — it runs as a subprocess of the extension host, where `$TERM_PROGRAM` is **not** set. So `$TERM_PROGRAM=vscode` checks only catch the integrated-terminal case, not the plugin.
 
-The robust fix uses two signals, in priority order:
+The robust fix uses three signals, in priority order:
 
 1. **VS Code env vars** — `$VSCODE_PID` and `$VSCODE_IPC_HOOK` are injected by the extension host into *both* the integrated terminal *and* extension subprocesses. If either is non-empty, we're inside VS Code (or a fork). Compare against frontmost via bundle-ID substring match (`*VSCode*`, `*Cursor*`, `*Windsurf*`, ...).
-2. **`$TERM_PROGRAM`** — covers everything else (standalone emulators).
+2. **`$CLAUDE_CODE_ENTRYPOINT=claude-desktop`** — set when Claude Code runs inside the Claude desktop app's **Code** section (the app spawns the CLI as a subprocess, and `$TERM_PROGRAM` is *not* set there). Without this, the toast fired even while the user was looking right at the in-app session. Match the desktop app as frontmost (`com.anthropic.claudefordesktop` on macOS, `Claude` window-class/process elsewhere).
+3. **`$TERM_PROGRAM`** — covers everything else (standalone emulators).
 
 | Signal | Host app to match |
 |---|---|
 | `$VSCODE_PID` or `$VSCODE_IPC_HOOK` set | bundle-ID substring match against `VSCode` / `vscode` / `code-oss` / `VSCodium` / `Cursor` / `Windsurf` / `todesktop` |
+| `CLAUDE_CODE_ENTRYPOINT=claude-desktop` | `com.anthropic.claudefordesktop` (macOS) / `Claude` window-class / process |
 | `TERM_PROGRAM=Apple_Terminal` | `com.apple.Terminal` |
 | `TERM_PROGRAM=iTerm.app` | `com.googlecode.iterm2` |
 | `TERM_PROGRAM=ghostty` | `com.mitchellh.ghostty` |

@@ -65,6 +65,13 @@ if [ -n "${VSCODE_PID:-}" ] || [ -n "${VSCODE_IPC_HOOK:-}" ]; then
     esac
 fi
 
+# Claude desktop app: the "Code" section runs Claude Code as an app subprocess
+# ($CLAUDE_CODE_ENTRYPOINT=claude-desktop, no $TERM_PROGRAM). Match its Electron
+# window class so the toast is suppressed while the app itself is focused.
+if [ "${CLAUDE_CODE_ENTRYPOINT:-}" = "claude-desktop" ]; then
+    case "$FRONT" in *[Cc]laude*) exit 0 ;; esac
+fi
+
 case "${TERM_PROGRAM:-}" in
     ghostty)
         case "$FRONT" in *[Gg]hostty*) exit 0 ;; esac ;;

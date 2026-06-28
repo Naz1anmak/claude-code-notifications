@@ -47,6 +47,13 @@ if ($env:VSCODE_PID -or $env:VSCODE_IPC_HOOK) {
     if ($frontProcess -match '^(Code|Code - Insiders|VSCodium|Cursor|Windsurf)$') { exit 0 }
 }
 
+# Claude desktop app: the "Code" section runs Claude Code as an app subprocess
+# ($env:CLAUDE_CODE_ENTRYPOINT = "claude-desktop", no $env:TERM_PROGRAM). Match
+# the app process so the toast is suppressed while the app itself is focused.
+if ($env:CLAUDE_CODE_ENTRYPOINT -eq "claude-desktop") {
+    if ($frontProcess -eq "Claude") { exit 0 }
+}
+
 switch ($env:TERM_PROGRAM) {
     default {
         $terminals = @("WindowsTerminal", "pwsh", "powershell", "cmd", "conhost",
